@@ -1,0 +1,122 @@
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <link href="https://stackpath.bootstrapcdn.com/bootswatch/4.3.1/superhero/bootstrap.min.css" rel="stylesheet" integrity="sha384-LS4/wo5Z/8SLpOLHs0IbuPAGOWTx30XSoZJ8o7WKH0UJhRpjXXTpODOjfVnNjeHu" crossorigin="anonymous">
+    <meta charset="utf-8"/>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.6/angular.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <style type="text/css">
+        body {
+            background-image: url(https://w-dog.ru/wallpapers/13/13/460978113768470/bloknot-knizhka-kofe-chashka.jpg);
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-size: cover;
+        }
+    </style>
+</head>
+
+<body ng-app="myApp" ng-controller="myCtrl" onload="$scope.getItems()">
+<h1 style="text-align: center", class="header-h1">Todo list</h1>
+<div class="container" >
+    <table class="table table-bordered table-hover " >
+        <thead class="table-info">
+        <td scope="col">ID</td>
+        <td scope="col">Element</td>
+        <td scope="col">Delete</td>
+        </thead>
+        <tr ng-repeat="i in items" class="table-light" >
+            <td >{{$index+1}}</td>
+            <td ng-click="editItem(i.id)">{{i.text}}</td>
+            <td>
+                <button class="btn btn-danger" ng-click="remo   veItem(i.id)">Delete</button>
+            </td>
+        </tr>
+    </table>
+    <form class="form-group">
+        <input class="form-control" type="text" id="form" ng-model="newItem"></input>
+        <button class="btn btn-success" ng-click="addItem()">Add</button>
+    </form>
+</div>
+<script>
+    var app = angular.module('myApp',[]);
+    app.controller('myCtrl', function($scope, $http) {
+        $scope.getItems = function() {
+            $http.get("items.php")
+                .then(function (response) {
+                    $scope.items = response.data;
+                });
+        }
+        $scope.getItems();
+        $scope.editItem = function (objectId) {
+            function edit(objectId){
+                let objectText = prompt('Enter new name', 'empty');
+                return new Promise ((resolve, reject) =>{
+                    let xmlRequest = new XMLHttpRequest();
+                    xmlRequest.open("POST", 'items.php');
+                    xmlRequest.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
+
+                    xmlRequest.onload = function() {
+                        if (this.status == 200){
+                            console.log(objectId + " was successfully updated");
+                            resolve(this.response);
+                        } else {
+                            reject(objectId + " was not updated");
+                        }
+                    };
+                    xmlRequest.send(JSON.stringify({"id":objectId,
+                        "text":objectText}));
+                });
+            }
+            edit(objectId)
+                .then(
+                   // response => $scope.getItems(),
+                    response => $scope.getItems() ,
+                    error => alert(`Rejected: ${error}`)
+                );
+        }
+        $scope.addItem = function () {
+            function add() {
+                let inputText = document.getElementById("form");
+                return new Promise(function (resolve, reject) {
+                    let xmlRequest = new XMLHttpRequest();
+                    xmlRequest.open("PUT", 'items.php');
+                    xmlRequest.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
+                    xmlRequest.send(JSON.stringify({
+                        'id': 0,
+                        'text': inputText.value,
+                    }));
+                    xmlRequest.onload = function () {
+                        if (this.status == 200) {
+                            console.log("Element was successfully inserted");
+                            resolve(this.response);
+                        } else {
+                            reject("Error");
+                        }
+                    };
+
+                });
+            }
+                add()
+                    .then(
+                        response => $scope.getItems(),
+                        error => alert(`Rejected: ${error}`)
+                    );
+            }
+            $scope.removeItem = function (removableId) {
+                    $.ajax({
+                        type: "DELETE",
+                        url: 'items.php' + '/' + removableId,
+                        success: () => {
+                            console.log("Deleted. id: " + removableId);
+                            $scope.getItems();
+                        },
+                        error: () => {
+                            alert("Not Acceptable. id: " + removableId);
+                        }
+                    });
+                };
+
+    });
+</script>
+
+</body>
+
